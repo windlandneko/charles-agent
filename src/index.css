@@ -1,8 +1,8 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/noto-sans";
-@import "@fontsource-variable/lora";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/noto-sans';
+@import '@fontsource-variable/lora';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -78,8 +78,8 @@
 }
 
 @theme inline {
-  --font-sans: "Noto Sans Variable", sans-serif;
-  --font-heading: "Lora Variable", serif;
+  --font-sans: 'Noto Sans Variable', sans-serif;
+  --font-heading: 'Lora Variable', serif;
   --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -132,7 +132,7 @@
     @apply bg-background text-foreground;
   }
   button:not(:disabled),
-  [role="button"]:not(:disabled) {
+  [role='button']:not(:disabled) {
     cursor: pointer;
   }
   html {

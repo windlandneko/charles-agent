@@ -87,7 +87,12 @@ const data = {
 const fadeLabelClass =
   'opacity-100 transition-opacity duration-200 ease-out group-data-[collapsible=icon]:opacity-0'
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  onNewChat,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  onNewChat: () => void
+}) {
   const { isMobile } = useSidebar()
   const [isContentScrolled, setIsContentScrolled] = React.useState(false)
 
@@ -112,14 +117,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {data.topNav.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
-                asChild
+                asChild={item.title !== 'New chat'}
                 tooltip={
                   item.shortcut
                     ? {
                         children: (
                           <>
                             <span>{item.title}</span>
-                            <span data-slot="kbd" className="text-background/70">
+                            <span
+                              data-slot="kbd"
+                              className="text-background/70"
+                            >
                               {item.shortcut}
                             </span>
                           </>
@@ -127,16 +135,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       }
                     : item.title
                 }
+                onClick={item.title === 'New chat' ? onNewChat : undefined}
               >
-                <a href={item.url}>
-                  {item.icon}
-                  <span>{item.title}</span>
-                  {item.shortcut ? (
-                    <kbd className="ml-auto hidden shrink-0 text-xs text-sidebar-foreground/70 group-focus-visible/menu-button:inline group-hover/menu-button:inline group-data-[collapsible=icon]:hidden">
-                      {item.shortcut}
-                    </kbd>
-                  ) : null}
-                </a>
+                {item.title === 'New chat' ? (
+                  <>
+                    {item.icon}
+                    <span>{item.title}</span>
+                  </>
+                ) : (
+                  <a href={item.url}>
+                    {item.icon}
+                    <span>{item.title}</span>
+                    {item.shortcut ? (
+                      <kbd className="ml-auto hidden shrink-0 text-xs text-sidebar-foreground/70 group-hover/menu-button:inline group-focus-visible/menu-button:inline group-data-[collapsible=icon]:hidden">
+                        {item.shortcut}
+                      </kbd>
+                    ) : null}
+                  </a>
+                )}
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
