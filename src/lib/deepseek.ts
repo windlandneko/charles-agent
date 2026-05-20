@@ -2,8 +2,12 @@ export type ChatMessage = {
   id?: string
   role: 'user' | 'assistant'
   content: string
+  createdAt?: string
+  updatedAt?: string
   reasoningContent?: string
   reasoningOpen?: boolean
+  thinkingEndedAt?: string
+  thinkingStartedAt?: string
   isThinking?: boolean
 }
 
@@ -37,12 +41,15 @@ export const deepseekModels = new Set(['deepseek-v4-flash', 'deepseek-v4-pro'])
 
 export function createAssistantPlaceholder(thinkingMode: string): ChatMessage {
   const isThinking = thinkingMode !== 'off'
+  const timestamp = new Date().toISOString()
 
   return {
     role: 'assistant',
     content: '',
+    createdAt: timestamp,
     reasoningContent: '',
     reasoningOpen: isThinking,
+    thinkingStartedAt: isThinking ? timestamp : undefined,
     isThinking,
   }
 }
@@ -68,6 +75,11 @@ export function updateStreamingMessage(
   if (!message || message.role !== 'assistant') return messages
 
   const hasContent = delta.content !== undefined
+  const thinkingEndedAt =
+    hasContent && message.isThinking
+      ? (message.thinkingEndedAt ?? new Date().toISOString())
+      : message.thinkingEndedAt
+
   next[next.length - 1] = {
     ...message,
     content: hasContent ? message.content + delta.content : message.content,
@@ -75,6 +87,7 @@ export function updateStreamingMessage(
       delta.reasoningContent !== undefined
         ? `${message.reasoningContent ?? ''}${delta.reasoningContent}`
         : message.reasoningContent,
+    thinkingEndedAt,
     isThinking: hasContent ? false : message.isThinking,
   }
 
@@ -90,6 +103,10 @@ export function finishStreamingMessage(messages: ChatMessage[]) {
     ...message,
     isThinking: false,
     reasoningOpen: false,
+    thinkingEndedAt:
+      message.isThinking && !message.thinkingEndedAt
+        ? new Date().toISOString()
+        : message.thinkingEndedAt,
   }
 
   return next

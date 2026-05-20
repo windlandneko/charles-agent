@@ -21,7 +21,10 @@ function AgentMessageSkeleton() {
 
 export function ConversationSkeleton() {
   return (
-    <div className="flex flex-col gap-8 py-4" aria-hidden="true">
+    <div
+      className="flex animate-in flex-col gap-8 py-4 duration-200 fade-in-0 motion-reduce:animate-none"
+      aria-hidden="true"
+    >
       <UserBubbleSkeleton />
       <AgentMessageSkeleton />
       <UserBubbleSkeleton />

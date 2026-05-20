@@ -1,13 +1,17 @@
 import { Check, ChevronRight, Copy, Pencil, RefreshCcw } from 'lucide-react'
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  memo,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import { MessageMarkdown } from '@/components/message-markdown'
 import { Button } from '@/components/ui/button'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +21,7 @@ import { cn } from '@/lib/utils'
 import type { ChatMessage } from '@/lib/deepseek'
 
 type MessageItemProps = {
+  enterDelayMs?: number
   index: number
   message: ChatMessage
   onCopy: (message: ChatMessage) => Promise<boolean>
@@ -34,6 +39,7 @@ type MessageAction = (typeof assistantActions)[number]
 const userActions = assistantActions.filter(([label]) => label !== 'Retry')
 
 export const MessageItem = memo(function MessageItem({
+  enterDelayMs,
   index,
   message,
   onCopy,
@@ -69,6 +75,7 @@ export const MessageItem = memo(function MessageItem({
     return (
       <AssistantMessage
         index={index}
+        enterDelayMs={enterDelayMs}
         isCopied={isCopied}
         message={message}
         onCopy={copy}
@@ -78,11 +85,19 @@ export const MessageItem = memo(function MessageItem({
     )
   }
 
-  return <UserMessage isCopied={isCopied} message={message} onCopy={copy} />
+  return (
+    <UserMessage
+      enterDelayMs={enterDelayMs}
+      isCopied={isCopied}
+      message={message}
+      onCopy={copy}
+    />
+  )
 })
 
 function AssistantMessage({
   index,
+  enterDelayMs,
   isCopied,
   message,
   onCopy,
@@ -90,6 +105,7 @@ function AssistantMessage({
   onRetry,
 }: {
   index: number
+  enterDelayMs?: number
   isCopied: boolean
   message: ChatMessage
   onCopy: () => void
@@ -97,9 +113,13 @@ function AssistantMessage({
   onRetry: (index: number) => void
 }) {
   const hasReasoning = Boolean(message.reasoningContent)
+  const enterAnimation = getEnterAnimationProps(enterDelayMs)
 
   return (
-    <article className="group mt-6 mb-1 flex flex-col">
+    <article
+      className={cn('group mt-6 mb-1 flex flex-col', enterAnimation.className)}
+      style={enterAnimation.style}
+    >
       {hasReasoning && (
         <Collapsible
           open={message.reasoningOpen}
@@ -110,7 +130,7 @@ function AssistantMessage({
               className="mb-4 flex max-w-full items-center gap-1 text-left text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               type="button"
             >
-              <span className="truncate">Thinking...</span>
+              <ThinkingStatus message={message} />
               <ChevronRight
                 className={cn(
                   'size-4 shrink-0 transition-transform',
@@ -119,14 +139,13 @@ function AssistantMessage({
               />
             </button>
           </CollapsibleTrigger>
-          <CollapsibleContent>
-            {message.reasoningOpen && (
-              <MessageMarkdown
-                className="mb-4 border-l border-border pl-4 text-sm text-muted-foreground"
-                content={message.reasoningContent ?? ''}
-              />
-            )}
-          </CollapsibleContent>
+          <ReasoningPanel open={Boolean(message.reasoningOpen)}>
+            <MessageMarkdown
+              className="mb-4 border-l border-border pl-4 text-sm text-muted-foreground"
+              content={message.reasoningContent ?? ''}
+              renderMath={false}
+            />
+          </ReasoningPanel>
         </Collapsible>
       )}
       <MessageMarkdown
@@ -144,16 +163,26 @@ function AssistantMessage({
 }
 
 function UserMessage({
+  enterDelayMs,
   isCopied,
   message,
   onCopy,
 }: {
+  enterDelayMs?: number
   isCopied: boolean
   message: ChatMessage
   onCopy: () => void
 }) {
+  const enterAnimation = getEnterAnimationProps(enterDelayMs)
+
   return (
-    <article className="group mt-6 mb-1 flex flex-col items-end">
+    <article
+      className={cn(
+        'group mt-6 mb-1 flex flex-col items-end',
+        enterAnimation.className
+      )}
+      style={enterAnimation.style}
+    >
       <MessageMarkdown
         className="mr-1 mb-1 max-w-[85%] rounded-xl bg-accent px-4 py-2.5"
         content={message.content}
@@ -165,6 +194,80 @@ function UserMessage({
       />
     </article>
   )
+}
+
+function ThinkingStatus({ message }: { message: ChatMessage }) {
+  if (message.isThinking) {
+    return (
+      <span className="truncate">
+        Thinking
+        <span className="inline-flex w-[1ch] justify-start" aria-hidden="true">
+          <span className="animate-pulse motion-reduce:animate-none">.</span>
+          <span className="animate-pulse [animation-delay:150ms] motion-reduce:animate-none">
+            .
+          </span>
+          <span className="animate-pulse [animation-delay:300ms] motion-reduce:animate-none">
+            .
+          </span>
+        </span>
+      </span>
+    )
+  }
+
+  return (
+    <span className="truncate">Thought for {getThinkingDuration(message)}</span>
+  )
+}
+
+function ReasoningPanel({
+  children,
+  open,
+}: {
+  children: ReactNode
+  open: boolean
+}) {
+  return (
+    <div
+      aria-hidden={!open}
+      className={cn(
+        'grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none',
+        open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+      )}
+    >
+      <div className="min-h-0 overflow-hidden">{children}</div>
+    </div>
+  )
+}
+
+function getThinkingDuration(message: ChatMessage) {
+  const start = Date.parse(message.thinkingStartedAt ?? message.createdAt ?? '')
+  const end = Date.parse(
+    message.thinkingEndedAt ?? message.updatedAt ?? new Date().toISOString()
+  )
+
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) return '0s'
+
+  return `${Math.round((end - start) / 1000)}s`
+}
+
+function getMessageAnimationStyle(delayMs: number) {
+  return {
+    '--message-enter-delay': `${delayMs}ms`,
+  } as CSSProperties
+}
+
+function getEnterAnimationProps(delayMs: number | undefined) {
+  if (delayMs === undefined) {
+    return {
+      className: undefined,
+      style: undefined,
+    }
+  }
+
+  return {
+    className: 'message-enter',
+    style: getMessageAnimationStyle(delayMs),
+  }
 }
 
 function MessageActions({

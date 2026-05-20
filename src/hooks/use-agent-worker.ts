@@ -414,11 +414,16 @@ class AgentWorker {
 
     this.assistant = assistant
     this.replace(assistant)
-    await storage.chats.updateMessage(assistant.id, {
+    const patch = {
       content: assistant.content,
       reasoningContent: assistant.reasoningContent,
       status,
-    })
+      ...(assistant.thinkingEndedAt
+        ? { metadata: { thinkingEndedAt: assistant.thinkingEndedAt } }
+        : {}),
+    }
+
+    await storage.chats.updateMessage(assistant.id, patch)
     onStorageChanged()
   }
 
@@ -461,6 +466,9 @@ async function appendAssistant(threadId: string, options: StreamOptions) {
   return {
     ...createAssistantPlaceholder(options.thinkingMode),
     id: message.id,
+    createdAt: message.createdAt,
+    thinkingStartedAt: message.createdAt,
+    updatedAt: message.updatedAt,
   }
 }
 
@@ -514,11 +522,22 @@ function toChatMessage(message: StoredMessage): ChatMessage | null {
     id: message.id,
     role: message.role,
     content: getMessageText(message.content),
+    createdAt: message.createdAt,
+    updatedAt: message.updatedAt,
     reasoningContent: message.reasoningContent,
     reasoningOpen:
       message.status === 'streaming' && Boolean(message.reasoningContent),
+    thinkingEndedAt: getThinkingEndedAt(message),
+    thinkingStartedAt: message.createdAt,
     isThinking: message.status === 'streaming',
   }
+}
+
+function getThinkingEndedAt(message: StoredMessage) {
+  const value = message.metadata?.thinkingEndedAt
+  if (typeof value === 'string') return value
+
+  return message.status === 'streaming' ? undefined : message.updatedAt
 }
 
 function getMessageText(content: StoredMessageContent) {

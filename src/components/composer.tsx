@@ -126,15 +126,6 @@ export const Composer = memo(function Composer({
           >
             <Plus />
           </Button>
-          <Input
-            aria-label="DeepSeek API key"
-            className="h-7 w-36 bg-input/20 px-2 py-1 text-xs md:w-48"
-            disabled={controlsDisabled}
-            onChange={({ target }) => onApiKeyChange(target.value)}
-            placeholder="DeepSeek API key"
-            type="password"
-            value={apiKey}
-          />
           <Select
             value={model}
             onValueChange={onModelChange}
@@ -179,6 +170,15 @@ export const Composer = memo(function Composer({
               </SelectGroup>
             </SelectContent>
           </Select>
+          <Input
+            aria-label="DeepSeek API key"
+            className="h-7 w-16 bg-input/20 px-2 py-1 text-xs md:w-24"
+            disabled={controlsDisabled}
+            onChange={({ target }) => onApiKeyChange(target.value)}
+            placeholder="API key"
+            type="password"
+            value={apiKey}
+          />
         </div>
 
         <Button

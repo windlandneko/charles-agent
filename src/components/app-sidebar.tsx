@@ -45,7 +45,7 @@ import {
 const data = {
   user: {
     name: 'Charlie',
-    email: 'Free plan',
+    email: 'neko@windland',
     avatar: '',
   },
   topNav: [
@@ -86,7 +86,7 @@ export function AppSidebar({
 }: React.ComponentProps<typeof Sidebar> & {
   chatThreads: ChatThreadsController
 }) {
-  const { isMobile } = useSidebar()
+  const { isMobile, setOpenMobile } = useSidebar()
   const [isContentScrolled, setIsContentScrolled] = React.useState(false)
   const {
     archivedThreads,
@@ -102,6 +102,11 @@ export function AppSidebar({
     },
     []
   )
+
+  const handleStartNewChat = React.useCallback(() => {
+    startNewChat()
+    if (isMobile) setOpenMobile(false)
+  }, [isMobile, setOpenMobile, startNewChat])
 
   return (
     <Sidebar collapsible="icon" className="select-none" {...props}>
@@ -135,7 +140,9 @@ export function AppSidebar({
                       }
                     : item.title
                 }
-                onClick={item.title === 'New chat' ? startNewChat : undefined}
+                onClick={
+                  item.title === 'New chat' ? handleStartNewChat : undefined
+                }
               >
                 {item.title === 'New chat' ? (
                   <>
@@ -205,6 +212,7 @@ export function AppSidebar({
               emptyLabel={isLoadingThreads ? 'Loading...' : 'No pinned chats'}
               isMobile={isMobile}
               label="Pinned"
+              setOpenMobile={setOpenMobile}
               threads={pinnedThreads}
             />
             <ThreadGroup
@@ -212,6 +220,7 @@ export function AppSidebar({
               emptyLabel={isLoadingThreads ? 'Loading...' : 'No recent chats'}
               isMobile={isMobile}
               label="Recents"
+              setOpenMobile={setOpenMobile}
               threads={recentThreads}
             />
             {archivedThreads.length > 0 ? (
@@ -220,6 +229,7 @@ export function AppSidebar({
                 emptyLabel=""
                 isMobile={isMobile}
                 label="Archived"
+                setOpenMobile={setOpenMobile}
                 threads={archivedThreads}
               />
             ) : null}
@@ -241,12 +251,14 @@ function ThreadGroup({
   emptyLabel,
   isMobile,
   label,
+  setOpenMobile,
   threads,
 }: {
   chatThreads: ChatThreadsController
   emptyLabel: string
   isMobile: boolean
   label: string
+  setOpenMobile: (open: boolean) => void
   threads: ChatThread[]
 }) {
   return (
@@ -259,6 +271,7 @@ function ThreadGroup({
               chatThreads={chatThreads}
               isMobile={isMobile}
               key={thread.id}
+              setOpenMobile={setOpenMobile}
               thread={thread}
             />
           ))
@@ -277,12 +290,19 @@ function ThreadGroup({
 function ThreadItem({
   chatThreads,
   isMobile,
+  setOpenMobile,
   thread,
 }: {
   chatThreads: ChatThreadsController
   isMobile: boolean
+  setOpenMobile: (open: boolean) => void
   thread: ChatThread
 }) {
+  const selectThread = React.useCallback(() => {
+    chatThreads.selectThread(thread.id)
+    if (isMobile) setOpenMobile(false)
+  }, [chatThreads, isMobile, setOpenMobile, thread.id])
+
   const renameThread = React.useCallback(async () => {
     const title = window.prompt('Rename chat', thread.title)?.trim()
     if (!title || title === thread.title) return
@@ -305,7 +325,7 @@ function ThreadItem({
           title={thread.title}
           tooltip={thread.title}
           type="button"
-          onClick={() => chatThreads.selectThread(thread.id)}
+          onClick={selectThread}
         >
           <span>{thread.title}</span>
         </SidebarMenuButton>
