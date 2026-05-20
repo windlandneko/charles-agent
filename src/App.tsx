@@ -1,20 +1,19 @@
-import { useState } from 'react'
-
 import { AppMain } from '@/components/app-main.tsx'
 import { AppSidebar } from '@/components/app-sidebar.tsx'
 import { ThemeProvider } from '@/components/theme-provider.tsx'
 import { SidebarProvider } from '@/components/ui/sidebar.tsx'
 import { TooltipProvider } from '@/components/ui/tooltip.tsx'
+import { useChatThreads } from '@/hooks/use-chat-threads.ts'
 
 export function App() {
-  const [chatResetKey, setChatResetKey] = useState(0)
+  const chatThreads = useChatThreads()
 
   return (
     <ThemeProvider>
       <TooltipProvider>
         <SidebarProvider>
-          <AppSidebar onNewChat={() => setChatResetKey(key => key + 1)} />
-          <AppMain key={chatResetKey} />
+          <AppSidebar chatThreads={chatThreads} />
+          <AppMain chatThreads={chatThreads} />
         </SidebarProvider>
       </TooltipProvider>
     </ThemeProvider>

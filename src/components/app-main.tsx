@@ -1,12 +1,26 @@
 import { Composer } from '@/components/composer'
 import { MessageItem } from '@/components/message-item'
+import { ConversationSkeleton } from '@/components/skeleton'
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
-import { useDeepSeekChat } from '@/hooks/use-deepseek-chat'
+import { useAgentWorker } from '@/hooks/use-agent-worker'
 import { cn } from '@/lib/utils'
+import type { ChatThreadsController } from '@/hooks/use-chat-threads'
 
-export function AppMain() {
-  const chat = useDeepSeekChat()
-  const hasMessages = chat.messages.length > 0
+type AppMainProps = {
+  chatThreads: ChatThreadsController
+}
+
+export function AppMain({ chatThreads }: AppMainProps) {
+  const chat = useAgentWorker({
+    chatThreads,
+  })
+  const messages = chat.messages
+  const isLoading =
+    Boolean(chatThreads.activeThreadId) &&
+    chat.isLoadingThread &&
+    messages.length === 0
+  const showConversation = messages.length > 0 || isLoading
+  const showWelcome = !showConversation
 
   return (
     <SidebarInset>
@@ -17,43 +31,49 @@ export function AppMain() {
       <div
         className={cn(
           'h-svh w-full overflow-y-auto pt-16 pb-64',
-          !hasMessages && 'hidden'
+          !showConversation && 'hidden'
         )}
       >
         <div className="mx-auto max-w-3xl px-8">
-          {chat.messages.map((message, index) => (
-            <MessageItem
-              key={index}
-              index={index}
-              message={message}
-              onCopy={chat.copyMessage}
-              onReasoningOpenChange={chat.changeReasoningOpen}
-              onRetry={chat.retryMessage}
-            />
-          ))}
+          {isLoading ? (
+            <ConversationSkeleton />
+          ) : (
+            messages.map((message, index) => (
+              <MessageItem
+                key={message.id ?? index}
+                index={index}
+                message={message}
+                onCopy={chat.copyMessage}
+                onReasoningOpenChange={chat.changeReasoningOpen}
+                onRetry={chat.retryMessage}
+              />
+            ))
+          )}
         </div>
       </div>
 
       <div
         className={cn(
           'absolute inset-x-0 mx-auto pb-4',
-          hasMessages
+          showConversation
             ? 'bottom-0 max-w-3xl bg-background px-2 pb-8'
             : 'top-1/4 max-w-2xl px-4'
         )}
       >
-        {!hasMessages && (
+        {showWelcome && (
           <h1 className="pb-12 text-center font-heading text-[clamp(1.875rem,1.2rem+2vw,2.5rem)] select-none">
             Good evening, Charlie
           </h1>
         )}
         <Composer
           apiKey={chat.apiKey}
-          disabled={false}
+          disabled={chat.isLoadingThread}
           isSending={chat.isSending}
           model={chat.model}
           placeholder={
-            hasMessages ? 'Write a message...' : 'How can I help you today?'
+            showConversation
+              ? 'Write a message...'
+              : 'How can I help you today?'
           }
           thinkingMode={chat.thinkingMode}
           value={chat.draft}
@@ -74,7 +94,7 @@ export function AppMain() {
       <p
         className={cn(
           'absolute bottom-2 w-full text-center text-xs text-muted-foreground select-none',
-          hasMessages
+          showConversation
             ? 'ease opacity-100 transition-opacity duration-500'
             : 'opacity-0'
         )}

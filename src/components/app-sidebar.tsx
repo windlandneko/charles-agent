@@ -1,11 +1,12 @@
 'use client'
 
 import {
+  ArchiveIcon,
   BoxIcon,
   Code2Icon,
-  GitForkIcon,
   MoreVertical,
   PencilIcon,
+  PinIcon,
   PlusIcon,
   SearchIcon,
   TrashIcon,
@@ -29,6 +30,8 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar'
+import type { ChatThreadsController } from '@/hooks/use-chat-threads'
+import type { ChatThread } from '@/lib/storage/schema'
 
 import {
   DropdownMenu,
@@ -72,30 +75,26 @@ const data = {
       icon: <BoxIcon />,
     },
   ],
-  recents: [
-    { title: 'Planning educational pursuits' },
-    { title: 'Custom API integration with Claude' },
-    { title: 'Introducing Claude' },
-    { title: 'Brainfuck interpreter for ASCII output' },
-    { title: 'Brainfuck interpreter for ASCII art output' },
-    { title: 'Brainfuck interpreter for ASCII very very long art output' },
-    { title: '设计模式练习与实现' },
-    { title: '设计模式学习与实现' },
-    { title: 'Creative projects' },
-  ],
 }
 
 const fadeLabelClass =
   'opacity-100 transition-opacity duration-200 ease-out group-data-[collapsible=icon]:opacity-0'
 
 export function AppSidebar({
-  onNewChat,
+  chatThreads,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
-  onNewChat: () => void
+  chatThreads: ChatThreadsController
 }) {
   const { isMobile } = useSidebar()
   const [isContentScrolled, setIsContentScrolled] = React.useState(false)
+  const {
+    archivedThreads,
+    isLoadingThreads,
+    pinnedThreads,
+    recentThreads,
+    startNewChat,
+  } = chatThreads
 
   const handleContentScroll = React.useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
@@ -136,7 +135,7 @@ export function AppSidebar({
                       }
                     : item.title
                 }
-                onClick={item.title === 'New chat' ? onNewChat : undefined}
+                onClick={item.title === 'New chat' ? startNewChat : undefined}
               >
                 {item.title === 'New chat' ? (
                   <>
@@ -201,49 +200,29 @@ export function AppSidebar({
           <SidebarGroup
             className={`group-data-[collapsible=icon]:pointer-events-none ${fadeLabelClass}`}
           >
-            <SidebarGroupLabel>Recents</SidebarGroupLabel>
-            <SidebarMenu>
-              {data.recents.map(item => (
-                <DropdownMenu key={item.title}>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <span>{item.title}</span>
-                      </a>
-                    </SidebarMenuButton>
-                    <DropdownMenuTrigger asChild>
-                      <SidebarMenuAction showOnHover>
-                        <MoreVertical />
-                        <span className="sr-only">Open recent chat menu</span>
-                      </SidebarMenuAction>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      side={isMobile ? 'bottom' : 'right'}
-                      align={isMobile ? 'end' : 'start'}
-                      className="min-w-56 rounded-lg"
-                    >
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem>
-                          <GitForkIcon />
-                          Fork
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <PencilIcon />
-                          Rename
-                        </DropdownMenuItem>
-                      </DropdownMenuGroup>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem variant="destructive">
-                          <TrashIcon />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </SidebarMenuItem>
-                </DropdownMenu>
-              ))}
-            </SidebarMenu>
+            <ThreadGroup
+              chatThreads={chatThreads}
+              emptyLabel={isLoadingThreads ? 'Loading...' : 'No pinned chats'}
+              isMobile={isMobile}
+              label="Pinned"
+              threads={pinnedThreads}
+            />
+            <ThreadGroup
+              chatThreads={chatThreads}
+              emptyLabel={isLoadingThreads ? 'Loading...' : 'No recent chats'}
+              isMobile={isMobile}
+              label="Recents"
+              threads={recentThreads}
+            />
+            {archivedThreads.length > 0 ? (
+              <ThreadGroup
+                chatThreads={chatThreads}
+                emptyLabel=""
+                isMobile={isMobile}
+                label="Archived"
+                threads={archivedThreads}
+              />
+            ) : null}
           </SidebarGroup>
         </SidebarContent>
       </div>
@@ -254,5 +233,118 @@ export function AppSidebar({
       <SidebarRail />
       <SidebarTrigger className="absolute top-2 right-2" />
     </Sidebar>
+  )
+}
+
+function ThreadGroup({
+  chatThreads,
+  emptyLabel,
+  isMobile,
+  label,
+  threads,
+}: {
+  chatThreads: ChatThreadsController
+  emptyLabel: string
+  isMobile: boolean
+  label: string
+  threads: ChatThread[]
+}) {
+  return (
+    <>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      <SidebarMenu>
+        {threads.length > 0 ? (
+          threads.map(thread => (
+            <ThreadItem
+              chatThreads={chatThreads}
+              isMobile={isMobile}
+              key={thread.id}
+              thread={thread}
+            />
+          ))
+        ) : emptyLabel ? (
+          <SidebarMenuItem>
+            <div className="px-2 py-1.5 text-xs text-sidebar-foreground/50">
+              {emptyLabel}
+            </div>
+          </SidebarMenuItem>
+        ) : null}
+      </SidebarMenu>
+    </>
+  )
+}
+
+function ThreadItem({
+  chatThreads,
+  isMobile,
+  thread,
+}: {
+  chatThreads: ChatThreadsController
+  isMobile: boolean
+  thread: ChatThread
+}) {
+  const renameThread = React.useCallback(async () => {
+    const title = window.prompt('Rename chat', thread.title)?.trim()
+    if (!title || title === thread.title) return
+
+    await chatThreads.renameThread(thread, title)
+  }, [chatThreads, thread])
+
+  const deleteThread = React.useCallback(async () => {
+    const confirmed = window.confirm(`Delete "${thread.title}"?`)
+    if (!confirmed) return
+
+    await chatThreads.deleteThread(thread)
+  }, [chatThreads, thread])
+
+  return (
+    <DropdownMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          isActive={thread.id === chatThreads.activeThreadId}
+          title={thread.title}
+          tooltip={thread.title}
+          type="button"
+          onClick={() => chatThreads.selectThread(thread.id)}
+        >
+          <span>{thread.title}</span>
+        </SidebarMenuButton>
+        <DropdownMenuTrigger asChild>
+          <SidebarMenuAction showOnHover>
+            <MoreVertical />
+            <span className="sr-only">Open chat menu</span>
+          </SidebarMenuAction>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side={isMobile ? 'bottom' : 'right'}
+          align={isMobile ? 'end' : 'start'}
+          className="min-w-44 rounded-lg"
+        >
+          <DropdownMenuGroup>
+            <DropdownMenuItem onSelect={() => chatThreads.togglePin(thread)}>
+              <PinIcon />
+              {thread.pinned ? 'Unpin' : 'Pin'}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={renameThread}>
+              <PencilIcon />
+              Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => chatThreads.toggleArchive(thread)}
+            >
+              <ArchiveIcon />
+              {thread.archived ? 'Unarchive' : 'Archive'}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem variant="destructive" onSelect={deleteThread}>
+              <TrashIcon />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </SidebarMenuItem>
+    </DropdownMenu>
   )
 }
