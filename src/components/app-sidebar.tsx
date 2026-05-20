@@ -1,5 +1,15 @@
 'use client'
 
+import {
+  BoxIcon,
+  Code2Icon,
+  GitForkIcon,
+  MoreVertical,
+  PencilIcon,
+  PlusIcon,
+  SearchIcon,
+  TrashIcon,
+} from 'lucide-react'
 import * as React from 'react'
 
 import { NavUser } from '@/components/nav-user'
@@ -19,16 +29,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar'
-import {
-  BoxIcon,
-  Code2Icon,
-  GitForkIcon,
-  MoreVertical,
-  PencilIcon,
-  PlusIcon,
-  SearchIcon,
-  TrashIcon,
-} from 'lucide-react'
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -114,7 +115,7 @@ export function AppSidebar({
           </div>
         </div>
         <SidebarMenu>
-          {data.topNav.map((item) => (
+          {data.topNav.map(item => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 asChild={item.title !== 'New chat'}
@@ -168,7 +169,7 @@ export function AppSidebar({
         <SidebarContent onScroll={handleContentScroll}>
           <SidebarGroup>
             <SidebarMenu>
-              {data.mainNav.map((item) => (
+              {data.mainNav.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild={!item.disabled}
@@ -202,7 +203,7 @@ export function AppSidebar({
           >
             <SidebarGroupLabel>Recents</SidebarGroupLabel>
             <SidebarMenu>
-              {data.recents.map((item) => (
+              {data.recents.map(item => (
                 <DropdownMenu key={item.title}>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild>

@@ -1,6 +1,13 @@
 'use client'
 
 import {
+  ArrowRightIcon,
+  FolderIcon,
+  MoreHorizontalIcon,
+  Trash2Icon,
+} from 'lucide-react'
+
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -16,12 +23,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import {
-  MoreHorizontalIcon,
-  FolderIcon,
-  ArrowRightIcon,
-  Trash2Icon,
-} from 'lucide-react'
 
 export function NavProjects({
   projects,
@@ -38,7 +39,7 @@ export function NavProjects({
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Projects</SidebarGroupLabel>
       <SidebarMenu>
-        {projects.map((item) => (
+        {projects.map(item => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
               <a href={item.url}>

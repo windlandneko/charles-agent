@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "endOfLine": "lf",
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "es5",
+  "arrowParens": "avoid",
+  "printWidth": 80,
+  "sortTailwindcss": {
+    "stylesheet": "src/index.css",
+    "functions": ["cn", "cva"]
+  },
+  "sortImports": {
+    "newlinesBetween": false,
+    "groups": [
+      "value-builtin",
+      "type-builtin",
+      { "newlinesBetween": true },
+      "value-external",
+      "type-external",
+      { "newlinesBetween": true },
+      "value-internal",
+      "type-internal",
+      { "newlinesBetween": true },
+      ["value-parent", "value-sibling", "value-index"],
+      ["type-parent", "type-sibling", "type-index"],
+      { "newlinesBetween": true },
+      "style",
+      "unknown"
+    ]
+  }
+}

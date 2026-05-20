@@ -1,11 +1,11 @@
-import { memo, type KeyboardEvent, type SyntheticEvent } from 'react'
-
 import { ArrowUp, Plus, Square } from 'lucide-react'
+import { type KeyboardEvent, memo, type SyntheticEvent } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+
 import {
   Select,
   SelectContent,
@@ -144,10 +144,10 @@ export const Composer = memo(function Composer({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {providers.map((provider) => (
+              {providers.map(provider => (
                 <SelectGroup key={provider.label}>
                   <SelectLabel>{provider.label}</SelectLabel>
-                  {provider.models.map((model) => (
+                  {provider.models.map(model => (
                     <SelectItem key={model.value} value={model.value}>
                       {model.label}
                     </SelectItem>
@@ -171,7 +171,7 @@ export const Composer = memo(function Composer({
               <SelectSeparator />
               <SelectGroup>
                 <SelectLabel>Thinking</SelectLabel>
-                {thinkingModes.map((mode) => (
+                {thinkingModes.map(mode => (
                   <SelectItem key={mode} value={mode}>
                     {mode}
                   </SelectItem>

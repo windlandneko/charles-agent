@@ -1,6 +1,5 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
-
 import { Check, ChevronRight, Copy, Pencil, RefreshCcw } from 'lucide-react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 
 import { MessageMarkdown } from '@/components/message-markdown'
 import { Button } from '@/components/ui/button'
@@ -104,7 +103,7 @@ function AssistantMessage({
       {hasReasoning && (
         <Collapsible
           open={message.reasoningOpen}
-          onOpenChange={(open) => onReasoningOpenChange(index, open)}
+          onOpenChange={open => onReasoningOpenChange(index, open)}
         >
           <CollapsibleTrigger asChild>
             <button

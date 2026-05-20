@@ -1,9 +1,8 @@
-import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
+import { PanelLeftIcon } from 'lucide-react'
 import { Slot } from 'radix-ui'
+import * as React from 'react'
 
-import { useMaxWidth } from '@/hooks/use-media-query'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -20,7 +19,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { PanelLeftIcon } from 'lucide-react'
+import { useMaxWidth } from '@/hooks/use-media-query'
+import { cn } from '@/lib/utils'
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -65,13 +65,8 @@ function SidebarProvider({
   onOpenChange?: (open: boolean) => void
 }) {
   const isMobile = useMaxWidth(1024)
-  const [openMobile, setOpenMobile] = React.useState(false)
-
-  React.useLayoutEffect(() => {
-    if (isMobile) {
-      setOpenMobile(false)
-    }
-  }, [isMobile])
+  const [openMobileState, setOpenMobile] = React.useState(false)
+  const openMobile = isMobile ? openMobileState : false
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -94,7 +89,7 @@ function SidebarProvider({
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
-    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
+    return isMobile ? setOpenMobile(open => !open) : setOpen(open => !open)
   }, [isMobile, setOpen, setOpenMobile])
 
   // Adds a keyboard shortcut to toggle the sidebar.
@@ -127,7 +122,7 @@ function SidebarProvider({
       setOpenMobile,
       toggleSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    [state, open, setOpen, isMobile, openMobile, toggleSidebar]
   )
 
   return (
@@ -273,7 +268,7 @@ function SidebarTrigger({
       variant="ghost"
       size="icon-lg"
       className={cn(className)}
-      onClick={(event) => {
+      onClick={event => {
         onClick?.(event)
         toggleSidebar()
       }}

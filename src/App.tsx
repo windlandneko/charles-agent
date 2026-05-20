@@ -13,7 +13,7 @@ export function App() {
     <ThemeProvider>
       <TooltipProvider>
         <SidebarProvider>
-          <AppSidebar onNewChat={() => setChatResetKey((key) => key + 1)} />
+          <AppSidebar onNewChat={() => setChatResetKey(key => key + 1)} />
           <AppMain key={chatResetKey} />
         </SidebarProvider>
       </TooltipProvider>

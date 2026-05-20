@@ -1,3 +1,12 @@
+import {
+  BadgeCheckIcon,
+  BellIcon,
+  ChevronsUpDownIcon,
+  CreditCardIcon,
+  LogOutIcon,
+  SparklesIcon,
+} from 'lucide-react'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -12,14 +21,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import {
-  BadgeCheckIcon,
-  BellIcon,
-  ChevronsUpDownIcon,
-  CreditCardIcon,
-  LogOutIcon,
-  SparklesIcon,
-} from 'lucide-react'
 
 function UserCard({
   user,

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
+  type ApiMessage,
+  type ChatMessage,
   createAssistantPlaceholder,
   deepseekModels,
   finishStreamingMessage,
   streamDeepSeekChat,
   toApiMessages,
   updateStreamingMessage,
-  type ApiMessage,
-  type ChatMessage,
 } from '@/lib/deepseek'
 
 type StreamOptions = {
@@ -39,7 +39,7 @@ export function useDeepSeekChat() {
     (
       nextMessages: ChatMessage[] | ((current: ChatMessage[]) => ChatMessage[])
     ) => {
-      setMessages((current) => {
+      setMessages(current => {
         const next =
           typeof nextMessages === 'function'
             ? nextMessages(current)
@@ -102,11 +102,11 @@ export function useDeepSeekChat() {
           ...options,
           messages: apiMessages,
           signal: abortController.signal,
-          onDelta: (delta) => {
-            updateMessages((current) => updateStreamingMessage(current, delta))
+          onDelta: delta => {
+            updateMessages(current => updateStreamingMessage(current, delta))
           },
         })
-        updateMessages((current) => finishStreamingMessage(current))
+        updateMessages(current => finishStreamingMessage(current))
       } catch (cause) {
         if (cause instanceof DOMException && cause.name === 'AbortError') return
         setError(
@@ -203,13 +203,13 @@ export function useDeepSeekChat() {
 
   const stopGeneration = useCallback(() => {
     abortControllerRef.current?.abort()
-    updateMessages((current) => finishStreamingMessage(current))
+    updateMessages(current => finishStreamingMessage(current))
     updateIsSending(false)
   }, [updateIsSending, updateMessages])
 
   const changeReasoningOpen = useCallback(
     (index: number, open: boolean) => {
-      updateMessages((current) =>
+      updateMessages(current =>
         current.map((message, messageIndex) =>
           messageIndex === index ? { ...message, reasoningOpen: open } : message
         )

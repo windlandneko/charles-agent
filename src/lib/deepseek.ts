@@ -48,7 +48,7 @@ export function createAssistantPlaceholder(thinkingMode: string): ChatMessage {
 
 export function toApiMessages(messages: ChatMessage[]): ApiMessage[] {
   return messages
-    .filter((message) => message.content.trim().length > 0)
+    .filter(message => message.content.trim().length > 0)
     .map(({ role, content, reasoningContent }) => ({
       role,
       content,
