@@ -1,5 +1,5 @@
 import { ArrowUp, Plus, StopCircle } from 'lucide-react'
-import { type KeyboardEvent, type SyntheticEvent } from 'react'
+import { memo, type KeyboardEvent, type SyntheticEvent } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,7 +27,11 @@ type ComposerProps = {
 
 const thinkingModes = ['max'] as const
 
-export function Composer({ className, agent, placeholder }: ComposerProps) {
+export const Composer = memo(function Composer({
+  className,
+  agent,
+  placeholder,
+}: ComposerProps) {
   const controlsDisabled = agent.isLoadingThread || agent.isSending
   const canSubmit =
     agent.draft.trim().length > 0 && !agent.isLoadingThread && !agent.isSending
@@ -145,5 +149,24 @@ export function Composer({ className, agent, placeholder }: ComposerProps) {
         </Button>
       </div>
     </form>
+  )
+}, areComposerPropsEqual)
+
+function areComposerPropsEqual(previous: ComposerProps, next: ComposerProps) {
+  return (
+    previous.className === next.className &&
+    previous.placeholder === next.placeholder &&
+    previous.agent.apiKey === next.agent.apiKey &&
+    previous.agent.draft === next.agent.draft &&
+    previous.agent.isLoadingThread === next.agent.isLoadingThread &&
+    previous.agent.isSending === next.agent.isSending &&
+    previous.agent.model === next.agent.model &&
+    previous.agent.thinkingMode === next.agent.thinkingMode &&
+    previous.agent.send === next.agent.send &&
+    previous.agent.stopGeneration === next.agent.stopGeneration &&
+    previous.agent.updateApiKey === next.agent.updateApiKey &&
+    previous.agent.updateDraft === next.agent.updateDraft &&
+    previous.agent.updateModel === next.agent.updateModel &&
+    previous.agent.updateThinkingMode === next.agent.updateThinkingMode
   )
 }

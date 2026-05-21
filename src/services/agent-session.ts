@@ -101,8 +101,6 @@ export function toChatMessage(message: StoredMessage): ChatMessage | null {
     createdAt: message.createdAt,
     updatedAt: message.updatedAt,
     reasoningContent: message.reasoningContent,
-    reasoningOpen:
-      message.status === 'streaming' && Boolean(message.reasoningContent),
     thinkingEndedAt: getThinkingEndedAt(message),
     thinkingStartedAt: message.createdAt,
     isThinking: message.status === 'streaming',
@@ -225,14 +223,6 @@ export class AgentSession {
 
     void this.finish('done').finally(() => {
       this.patch({ isSending: false })
-    })
-  }
-
-  changeReasoningOpen(index: number, open: boolean) {
-    this.patch({
-      messages: this.snapshot.messages.map((message, messageIndex) =>
-        messageIndex === index ? { ...message, reasoningOpen: open } : message
-      ),
     })
   }
 

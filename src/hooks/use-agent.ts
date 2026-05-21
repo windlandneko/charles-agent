@@ -147,10 +147,6 @@ export function useAgent({
     [getOptions]
   )
 
-  const changeReasoningOpen = useCallback((index: number, open: boolean) => {
-    activeSessionRef.current?.changeReasoningOpen(index, open)
-  }, [])
-
   const stopGeneration = useCallback(() => {
     activeSessionRef.current?.stop()
   }, [])
@@ -164,7 +160,6 @@ export function useAgent({
     messages: snapshot.messages,
     model,
     thinkingMode,
-    changeReasoningOpen,
     retryMessage,
     send,
     stopGeneration,

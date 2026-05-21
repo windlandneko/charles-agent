@@ -5,7 +5,6 @@ export type ChatMessage = {
   createdAt?: string
   updatedAt?: string
   reasoningContent?: string
-  reasoningOpen?: boolean
   thinkingEndedAt?: string
   thinkingStartedAt?: string
   isThinking?: boolean
@@ -100,7 +99,6 @@ export function createAssistantPlaceholder(thinkingMode: string): ChatMessage {
     content: '',
     createdAt: timestamp,
     reasoningContent: '',
-    reasoningOpen: isThinking,
     thinkingStartedAt: isThinking ? timestamp : undefined,
     isThinking,
   }
@@ -154,7 +152,6 @@ export function finishStreamingMessage(messages: ChatMessage[]) {
   next[next.length - 1] = {
     ...message,
     isThinking: false,
-    reasoningOpen: false,
     thinkingEndedAt:
       message.isThinking && !message.thinkingEndedAt
         ? new Date().toISOString()

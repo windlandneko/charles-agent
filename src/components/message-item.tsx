@@ -1,5 +1,5 @@
 import { Check, ChevronRight, Copy, Pencil, RefreshCcw } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { memo, type ReactNode, useEffect, useState } from 'react'
 
 import { MessageMarkdown } from '@/components/message-markdown'
 import { Button } from '@/components/ui/button'
@@ -16,14 +16,12 @@ import type { ChatMessage } from '@/lib/deepseek'
 type MessageItemProps = {
   index: number
   message: ChatMessage
-  onReasoningOpenChange: (index: number, open: boolean) => void
   onRetry: (index: number) => void
 }
 
-export function MessageItem({
+export const MessageItem = memo(function MessageItem({
   index,
   message,
-  onReasoningOpenChange,
   onRetry,
 }: MessageItemProps) {
   if (message.role === 'assistant') {
@@ -31,34 +29,38 @@ export function MessageItem({
       <AssistantMessage
         index={index}
         message={message}
-        onReasoningOpenChange={onReasoningOpenChange}
         onRetry={onRetry}
       />
     )
   }
 
   return <UserMessage message={message} />
-}
+})
 
 function AssistantMessage({
   index,
   message,
-  onReasoningOpenChange,
   onRetry,
 }: {
   index: number
   message: ChatMessage
-  onReasoningOpenChange: (index: number, open: boolean) => void
   onRetry: (index: number) => void
 }) {
   const hasReasoning = Boolean(message.reasoningContent)
+  const [reasoningOpen, setReasoningOpen] = useState(
+    () => message.isThinking === true
+  )
+
+  useEffect(() => {
+    if (message.isThinking) setReasoningOpen(true)
+  }, [message.isThinking])
 
   return (
     <article className="group mt-6 mb-1 flex flex-col">
       {hasReasoning && (
         <Collapsible
-          open={message.reasoningOpen}
-          onOpenChange={open => onReasoningOpenChange(index, open)}
+          open={reasoningOpen}
+          onOpenChange={setReasoningOpen}
         >
           <CollapsibleTrigger asChild>
             <button
@@ -69,12 +71,12 @@ function AssistantMessage({
               <ChevronRight
                 className={cn(
                   'size-4 shrink-0 transition-transform',
-                  message.reasoningOpen && 'rotate-90'
+                  reasoningOpen && 'rotate-90'
                 )}
               />
             </button>
           </CollapsibleTrigger>
-          <ReasoningPanel open={Boolean(message.reasoningOpen)}>
+          <ReasoningPanel open={reasoningOpen}>
             <MessageMarkdown
               className="mb-4 border-l border-border pl-4 text-sm text-muted-foreground"
               content={message.reasoningContent ?? ''}
@@ -141,12 +143,13 @@ function ReasoningPanel({
   return (
     <div
       aria-hidden={!open}
+      inert={!open}
       className={cn(
         'grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none',
         open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
       )}
     >
-      <div className="min-h-0 overflow-hidden">{open ? children : null}</div>
+      <div className="min-h-0 overflow-hidden">{children}</div>
     </div>
   )
 }

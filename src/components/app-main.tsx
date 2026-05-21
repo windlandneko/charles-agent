@@ -33,7 +33,6 @@ export function AppMain({ controller }: { controller: ChatThreadsController }) {
                       key={message.id}
                       index={index}
                       message={message}
-                      onReasoningOpenChange={agent.changeReasoningOpen}
                       onRetry={agent.retryMessage}
                     />
                   ))
