@@ -21,10 +21,6 @@ export default defineConfig({
               test: /node_modules[\\/]@?radix-ui/,
             },
             {
-              name: 'markdown',
-              test: /node_modules[\\/](?:react-markdown|remark-|rehype-|unified|katex|micromark|mdast-|hast-|unist-|vfile|property-information|space-separated-tokens|comma-separated-tokens|decode-named-character-reference|markdown-table|trim-lines|zwitch)/,
-            },
-            {
               name: 'dexie',
               test: /node_modules[\\/]dexie/,
             },

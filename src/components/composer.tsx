@@ -60,7 +60,7 @@ export const Composer = memo(function Composer({
 
   return (
     <form
-      className={cn('relative w-full', className)}
+      className={cn('relative z-10 w-full', className)}
       onSubmit={(event: SyntheticEvent) => {
         event.preventDefault()
         handleSend()
@@ -68,7 +68,7 @@ export const Composer = memo(function Composer({
     >
       <Textarea
         aria-label="Message"
-        className="shadow-composer min-h-24 rounded-2xl bg-card px-5 pt-4.5 pb-16 text-base! focus-visible:ring-0"
+        className="shadow-composer max-h-96 min-h-24 rounded-2xl bg-card px-5 pt-4.5 pb-16 text-base!"
         disabled={controlsDisabled}
         onChange={({ target }) => agent.updateDraft(target.value)}
         onKeyDown={(event: KeyboardEvent) => {
@@ -81,7 +81,12 @@ export const Composer = memo(function Composer({
         value={agent.draft}
       />
 
-      <div className="pointer-events-none absolute right-3 bottom-3 left-3 flex items-end justify-between">
+<div
+        aria-hidden="true"
+        className="pointer-events-none absolute right-2 bottom-0 left-0 z-10 h-18 rounded-b-2xl bg-linear-to-t from-card via-card via-70% to-card/0 dark:from-input dark:via-input dark:via-70% dark:to-input/0"
+      />
+
+      <div className="pointer-events-none absolute right-3 bottom-3 left-3 z-20 flex items-end justify-between">
         <div className="pointer-events-auto flex min-w-0 items-center gap-1">
           <Button
             type="button"

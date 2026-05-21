@@ -4,6 +4,12 @@
 @import '@fontsource-variable/noto-sans';
 @import '@fontsource-variable/lora';
 
+@source '../node_modules/streamdown/dist/*.js';
+@source '../node_modules/@streamdown/cjk/dist/*.js';
+@source '../node_modules/@streamdown/code/dist/*.js';
+@source '../node_modules/@streamdown/math/dist/*.js';
+@source '../node_modules/@streamdown/mermaid/dist/*.js';
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -23,6 +29,7 @@
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
+  --border-300: 60 2% 12%;
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.87 0 0);
@@ -59,7 +66,8 @@
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border-300: 53 12% 87%;
+  --input: oklch(0.28 0 0);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -126,20 +134,20 @@
   .shadow-composer {
     box-shadow:
       0 0.25rem 1.25rem hsl(0 0% 0% / 3.5%),
-      0 0 0 0.5px hsla(0 0% 0% / 0.15);
+      0 0 0 0.5px hsla(var(--border-300) / 0.15);
     &:focus-within {
       box-shadow:
         0 0.25rem 1.25rem hsl(0 0% 0% / 7.5%),
-        0 0 0 0.5px hsla(0 0% 0% / 0.3);
+        0 0 0 0.5px hsla(var(--border-300) / 0.3);
     }
     &:hover {
       box-shadow:
         0 0.25rem 1.25rem hsl(0 0% 0% / 3.5%),
-        0 0 0 0.5px hsla(0 0% 0% / 0.3);
+        0 0 0 0.5px hsla(var(--border-300) / 0.3);
       &:focus-within {
         box-shadow:
           0 0.25rem 1.25rem hsl(0 0% 0% / 7.5%),
-          0 0 0 0.5px hsla(0 0% 0% / 0.3);
+          0 0 0 0.5px hsla(var(--border-300) / 0.3);
       }
     }
   }
@@ -152,37 +160,12 @@
     scrollbar-color: var(--color-scrollbar) transparent;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-hidden;
   }
-  button:not(:disabled),
-  [role='button']:not(:disabled) {
+  button:not(:disabled) {
     cursor: pointer;
   }
   html {
     @apply font-sans;
-  }
-}
-
-@layer utilities {
-  @keyframes message-enter {
-    from {
-      opacity: 0;
-      transform: translateY(0.75rem);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .message-enter {
-    animation: message-enter 260ms var(--ease-out) both;
-    animation-delay: var(--message-enter-delay, 0ms);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .message-enter {
-      animation: none;
-    }
   }
 }

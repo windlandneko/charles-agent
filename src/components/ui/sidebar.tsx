@@ -186,8 +186,8 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
-          overlayClassName="bg-transparent backdrop-blur-none supports-backdrop-filter:backdrop-blur-none"
+          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden select-none"
+          // overlayClassName="bg-transparent backdrop-blur-none supports-backdrop-filter:backdrop-blur-none"
           style={
             {
               width: SIDEBAR_WIDTH_MOBILE,

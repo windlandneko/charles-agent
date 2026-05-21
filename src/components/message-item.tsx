@@ -78,7 +78,7 @@ function AssistantMessage({
             <MessageMarkdown
               className="mb-4 border-l border-border pl-4 text-sm text-muted-foreground"
               content={message.reasoningContent ?? ''}
-              renderMath={false}
+              streaming={message.isThinking}
             />
           </ReasoningPanel>
         </Collapsible>
@@ -86,6 +86,7 @@ function AssistantMessage({
       <MessageMarkdown
         className="mb-1 ml-1 font-heading text-pretty"
         content={message.content || (message.isThinking ? '' : '...')}
+        streaming={message.isThinking}
       />
       <MessageActions
         content={message.content}
@@ -145,7 +146,7 @@ function ReasoningPanel({
         open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
       )}
     >
-      <div className="min-h-0 overflow-hidden">{children}</div>
+      <div className="min-h-0 overflow-hidden">{open ? children : null}</div>
     </div>
   )
 }

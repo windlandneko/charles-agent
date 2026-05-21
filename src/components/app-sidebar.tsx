@@ -69,9 +69,11 @@ const data = {
       badge: 'todo',
     },
     {
-      title: 'Customize',
+      title: 'Provider',
       url: '#',
       icon: <BoxIcon />,
+      disabled: true,
+      badge: 'todo',
     },
   ],
 }
@@ -85,10 +87,20 @@ export function AppSidebar({
 }: React.ComponentProps<typeof Sidebar> & {
   controller: ChatThreadsController
 }) {
-  const { isMobile, setOpenMobile } = useSidebar()
+  const { isMobile, open, openMobile, setOpenMobile } = useSidebar()
   const [isContentScrolled, setIsContentScrolled] = React.useState(false)
   const { archivedThreads, isLoadingThreads, visibleThreads, startNewChat } =
     controller
+
+  const contentRef = React.useRef<HTMLDivElement>(null)
+  const wasOpenRef = React.useRef(open)
+
+  React.useEffect(() => {
+    if (wasOpenRef.current && !open)
+      contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+
+    wasOpenRef.current = open
+  }, [open])
 
   const handleContentScroll = React.useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
@@ -163,10 +175,16 @@ export function AppSidebar({
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div
           className={`pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-sidebar-border transition-opacity duration-150 ease-out ${
-            isContentScrolled ? 'opacity-100' : 'opacity-0'
+            isContentScrolled && (open || openMobile)
+              ? 'opacity-100'
+              : 'opacity-0'
           }`}
         />
-        <SidebarContent onScroll={handleContentScroll}>
+        <SidebarContent
+          ref={contentRef}
+          onScroll={handleContentScroll}
+          className="overflow-x-hidden"
+        >
           <SidebarGroup>
             <SidebarMenu>
               {data.mainNav.map(item => (
@@ -227,7 +245,7 @@ export function AppSidebar({
         <NavUser user={data.user} />
       </SidebarFooter>
       <SidebarRail />
-      <SidebarTrigger className="absolute top-2 right-2" />
+      {!isMobile && <SidebarTrigger className="absolute top-2 right-2" />}
     </Sidebar>
   )
 }
