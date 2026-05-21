@@ -5,11 +5,7 @@ import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { useAgent } from '@/hooks/use-agent'
 import type { ChatThreadsController } from '@/hooks/use-chat-threads'
 
-type AppMainProps = {
-  controller: ChatThreadsController
-}
-
-export function AppMain({ controller }: AppMainProps) {
+export function AppMain({ controller }: { controller: ChatThreadsController }) {
   const agent = useAgent({ controller })
   const messages = agent.messages
   const isLoading =

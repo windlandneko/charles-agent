@@ -10,7 +10,7 @@ import {
   SearchIcon,
   TrashIcon,
 } from 'lucide-react'
-import * as React from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { NavUser } from '@/components/nav-user'
 import {
@@ -88,31 +88,28 @@ export function AppSidebar({
   controller: ChatThreadsController
 }) {
   const { isMobile, open, openMobile, setOpenMobile } = useSidebar()
-  const [isContentScrolled, setIsContentScrolled] = React.useState(false)
+  const [isContentScrolled, setIsContentScrolled] = useState(false)
   const { archivedThreads, isLoadingThreads, visibleThreads, startNewChat } =
     controller
 
-  const contentRef = React.useRef<HTMLDivElement>(null)
-  const wasOpenRef = React.useRef(open)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const wasOpenRef = useRef(open)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (wasOpenRef.current && !open)
       contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
 
     wasOpenRef.current = open
   }, [open])
 
-  const handleContentScroll = React.useCallback(
-    (event: React.UIEvent<HTMLDivElement>) => {
-      setIsContentScrolled(event.currentTarget.scrollTop > 0)
-    },
-    []
-  )
+  const handleContentScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    setIsContentScrolled(event.currentTarget.scrollTop > 0)
+  }
 
-  const handleStartNewChat = React.useCallback(() => {
+  const handleStartNewChat = () => {
     startNewChat()
     if (isMobile) setOpenMobile(false)
-  }, [isMobile, setOpenMobile, startNewChat])
+  }
 
   return (
     <Sidebar collapsible="icon" className="select-none" {...props}>
@@ -302,24 +299,24 @@ function ThreadItem({
   setOpenMobile: (open: boolean) => void
   thread: ChatThread
 }) {
-  const selectThread = React.useCallback(() => {
+  const selectThread = () => {
     controller.activateThread(thread.id)
     if (isMobile) setOpenMobile(false)
-  }, [controller, isMobile, setOpenMobile, thread.id])
+  }
 
-  const renameThread = React.useCallback(async () => {
+  const renameThread = async () => {
     const title = window.prompt('Rename chat', thread.title)?.trim()
     if (!title || title === thread.title) return
 
     await controller.updateThread(thread, { title })
-  }, [controller, thread])
+  }
 
-  const deleteThread = React.useCallback(async () => {
+  const deleteThread = async () => {
     const confirmed = window.confirm(`Delete "${thread.title}"?`)
     if (!confirmed) return
 
     await controller.deleteThread(thread)
-  }, [controller, thread])
+  }
 
   const menuTrigger = thread.pinned ? (
     <SidebarMenuAction
@@ -363,9 +360,12 @@ function ThreadItem({
             Rename
           </DropdownMenuItem>
           <DropdownMenuItem
-            onSelect={() =>
+            onSelect={() => {
               controller.updateThread(thread, { archived: !thread.archived })
-            }
+              // If an active thread is archived, switch to new chat
+              if (thread.id === controller.activeThreadId && !thread.archived)
+                controller.startNewChat()
+            }}
           >
             <ArchiveIcon />
             {thread.archived ? 'Unarchive' : 'Archive'}

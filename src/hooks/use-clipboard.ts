@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export function useCopyToClipboard(timeout = 2000) {
   const [copied, setCopied] = useState(false)
@@ -12,24 +12,21 @@ export function useCopyToClipboard(timeout = 2000) {
     }
   }, [])
 
-  const copy = useCallback(
-    async (text: string) => {
-      if (!text) return false
-      try {
-        await navigator.clipboard.writeText(text)
-        setCopied(true)
-        if (timerRef.current !== null) {
-          window.clearTimeout(timerRef.current)
-        }
-        timerRef.current = window.setTimeout(() => setCopied(false), timeout)
-        return true
-      } catch (err) {
-        console.error('Failed to copy text', err)
-        return false
+  const copy = async (text: string) => {
+    if (!text) return false
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current)
       }
-    },
-    [timeout]
-  )
+      timerRef.current = window.setTimeout(() => setCopied(false), timeout)
+      return true
+    } catch (err) {
+      console.error('Failed to copy text', err)
+      return false
+    }
+  }
 
   return { copied, copy }
 }

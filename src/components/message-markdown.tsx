@@ -2,7 +2,6 @@ import { cjk } from '@streamdown/cjk'
 import { code } from '@streamdown/code'
 import { createMathPlugin } from '@streamdown/math'
 import { mermaid } from '@streamdown/mermaid'
-import { memo, useMemo } from 'react'
 import { Streamdown } from 'streamdown'
 
 import 'katex/dist/katex.min.css'
@@ -46,15 +45,12 @@ function normalizeMathDelimiters(content: string) {
     .join('')
 }
 
-export const MessageMarkdown = memo(function MessageMarkdown({
+export function MessageMarkdown({
   content,
   className,
   streaming = false,
 }: MessageMarkdownProps) {
-  const markdownContent = useMemo(
-    () => normalizeMathDelimiters(content),
-    [content]
-  )
+  const markdownContent = normalizeMathDelimiters(content)
 
   return (
     <Streamdown
@@ -69,4 +65,4 @@ export const MessageMarkdown = memo(function MessageMarkdown({
       {markdownContent}
     </Streamdown>
   )
-})
+}

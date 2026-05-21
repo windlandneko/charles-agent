@@ -186,7 +186,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden select-none"
+          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground select-none [&>button]:hidden"
           // overlayClassName="bg-transparent backdrop-blur-none supports-backdrop-filter:backdrop-blur-none"
           style={
             {

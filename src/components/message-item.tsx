@@ -1,5 +1,5 @@
 import { Check, ChevronRight, Copy, Pencil, RefreshCcw } from 'lucide-react'
-import { memo, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 import { MessageMarkdown } from '@/components/message-markdown'
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,7 @@ type MessageItemProps = {
   onRetry: (index: number) => void
 }
 
-export const MessageItem = memo(function MessageItem({
+export function MessageItem({
   index,
   message,
   onReasoningOpenChange,
@@ -38,7 +38,7 @@ export const MessageItem = memo(function MessageItem({
   }
 
   return <UserMessage message={message} />
-})
+}
 
 function AssistantMessage({
   index,

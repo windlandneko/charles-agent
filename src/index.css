@@ -160,7 +160,7 @@
     scrollbar-color: var(--color-scrollbar) transparent;
   }
   body {
-    @apply bg-background text-foreground overflow-hidden;
+    @apply overflow-hidden bg-background text-foreground;
   }
   button:not(:disabled) {
     cursor: pointer;

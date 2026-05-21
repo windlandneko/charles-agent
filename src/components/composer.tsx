@@ -1,10 +1,5 @@
 import { ArrowUp, Plus, StopCircle } from 'lucide-react'
-import {
-  type KeyboardEvent,
-  type SyntheticEvent,
-  memo,
-  useCallback,
-} from 'react'
+import { type KeyboardEvent, type SyntheticEvent } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,22 +36,18 @@ const providers = [
 
 const thinkingModes = ['max'] as const
 
-export const Composer = memo(function Composer({
-  className,
-  agent,
-  placeholder,
-}: ComposerProps) {
+export function Composer({ className, agent, placeholder }: ComposerProps) {
   const controlsDisabled = agent.isLoadingThread || agent.isSending
   const canSubmit =
     agent.draft.trim().length > 0 && !agent.isLoadingThread && !agent.isSending
 
-  const handleSend = useCallback(() => {
+  const handleSend = () => {
     if (agent.isSending) {
       agent.stopGeneration?.()
       return
     }
     if (canSubmit) agent.send()
-  }, [agent.isSending, canSubmit, agent.send, agent.stopGeneration])
+  }
 
   return (
     <form
@@ -73,7 +64,7 @@ export const Composer = memo(function Composer({
         onChange={({ target }) => agent.updateDraft(target.value)}
         onKeyDown={(event: KeyboardEvent) => {
           if (event.key !== 'Enter') return
-          if (event.shiftKey || event.metaKey) return
+          if (event.shiftKey) return
           event.preventDefault()
           handleSend()
         }}
@@ -164,4 +155,4 @@ export const Composer = memo(function Composer({
       </div>
     </form>
   )
-})
+}

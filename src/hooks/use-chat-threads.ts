@@ -1,33 +1,33 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import { storage } from '@/lib/storage'
 import type { ChatThread } from '@/lib/storage/schema'
+
+const EMPTY_THREADS: ChatThread[] = []
+
+type ThreadPatch = Partial<Omit<ChatThread, 'id' | 'createdAt'>>
+
+function splitThreads(threads: ChatThread[]) {
+  const visibleThreads: ChatThread[] = []
+  const archivedThreads: ChatThread[] = []
+
+  for (const thread of threads) {
+    if (thread.archived) archivedThreads.push(thread)
+    else visibleThreads.push(thread)
+  }
+
+  return { archivedThreads, visibleThreads }
+}
 
 export function useChatThreads() {
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
 
   const threadsResult = useLiveQuery(() => storage.chats.listThreads())
-  const threads = threadsResult ?? []
+  const threads = threadsResult ?? EMPTY_THREADS
   const isLoadingThreads = threadsResult === undefined
 
-  const visibleThreads = useMemo(
-    () => threads.filter(thread => !thread.archived),
-    [threads]
-  )
-  const archivedThreads = useMemo(
-    () => threads.filter(thread => thread.archived),
-    [threads]
-  )
-
-  useEffect(() => {
-    if (activeThreadId) {
-      const activeThread = threads.find(t => t.id === activeThreadId)
-      if (!activeThread || activeThread.archived) {
-        setActiveThreadId(null)
-      }
-    }
-  }, [threads, activeThreadId])
+  const { archivedThreads, visibleThreads } = splitThreads(threads)
 
   return {
     activeThreadId,
@@ -37,10 +37,8 @@ export function useChatThreads() {
     activateThread: (threadId: string) => setActiveThreadId(threadId),
     deleteThread: (thread: ChatThread) => storage.chats.deleteThread(thread.id),
     startNewChat: () => setActiveThreadId(null),
-    updateThread: (
-      thread: ChatThread,
-      patch: Partial<Omit<ChatThread, 'id' | 'createdAt'>>
-    ) => storage.chats.updateThread(thread.id, patch),
+    updateThread: (thread: ChatThread, patch: ThreadPatch) =>
+      storage.chats.updateThread(thread.id, patch),
   }
 }
 

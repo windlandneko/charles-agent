@@ -1,19 +1,17 @@
-import { useCallback, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 
 export function useMediaQuery(query: string) {
-  const subscribe = useCallback(
-    (onStoreChange: () => void) => {
+  return useSyncExternalStore(
+    onStoreChange => {
       const mediaQuery = window.matchMedia(query)
 
       mediaQuery.addEventListener('change', onStoreChange)
 
       return () => mediaQuery.removeEventListener('change', onStoreChange)
     },
-    [query]
+    () => getMediaQuerySnapshot(query),
+    () => false
   )
-  const getSnapshot = useCallback(() => getMediaQuerySnapshot(query), [query])
-
-  return useSyncExternalStore(subscribe, getSnapshot, () => false)
 }
 
 export function useMaxWidth(width: number) {
