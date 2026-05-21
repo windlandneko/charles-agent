@@ -4,6 +4,7 @@ import { type KeyboardEvent, type SyntheticEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { chatProviders } from '@/lib/deepseek'
 import { cn } from '@/lib/utils'
 import type { AgentHook } from '@/hooks/use-agent'
 
@@ -23,16 +24,6 @@ type ComposerProps = {
   agent: AgentHook
   placeholder?: string
 }
-
-const providers = [
-  {
-    label: 'Deepseek',
-    models: [
-      { value: 'deepseek-v4-flash', label: 'Deepseek V4 Flash' },
-      { value: 'deepseek-v4-pro', label: 'Deepseek V4 Pro' },
-    ],
-  },
-] as const
 
 const thinkingModes = ['max'] as const
 
@@ -72,7 +63,7 @@ export function Composer({ className, agent, placeholder }: ComposerProps) {
         value={agent.draft}
       />
 
-<div
+      <div
         aria-hidden="true"
         className="pointer-events-none absolute right-2 bottom-0 left-0 z-10 h-18 rounded-b-2xl bg-linear-to-t from-card via-card via-70% to-card/0 dark:from-input dark:via-input dark:via-70% dark:to-input/0"
       />
@@ -97,8 +88,8 @@ export function Composer({ className, agent, placeholder }: ComposerProps) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {providers.map(provider => (
-                <SelectGroup key={provider.label}>
+              {chatProviders.map(provider => (
+                <SelectGroup key={provider.id}>
                   <SelectLabel>{provider.label}</SelectLabel>
                   {provider.models.map(model => (
                     <SelectItem key={model.value} value={model.value}>

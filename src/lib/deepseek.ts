@@ -22,13 +22,13 @@ export type StreamDelta = {
   reasoningContent?: string
 }
 
-type DeepSeekErrorResponse = {
+type ChatCompletionsErrorResponse = {
   error?: {
     message?: string
   }
 }
 
-type DeepSeekStreamChunk = {
+type ChatCompletionsStreamChunk = {
   choices?: Array<{
     delta?: {
       content?: string | null
@@ -37,7 +37,59 @@ type DeepSeekStreamChunk = {
   }>
 }
 
-export const deepseekModels = new Set(['deepseek-v4-flash', 'deepseek-v4-pro'])
+export type ChatProviderDefinition = {
+  id: string
+  label: string
+  endpoint: string
+  apiKeyRequired: boolean
+  models: readonly ChatModelDefinition[]
+}
+
+export type ChatModelDefinition = {
+  value: string
+  label: string
+}
+
+export type ChatModelConfig = ChatModelDefinition & {
+  providerId: string
+  providerLabel: string
+  endpoint: string
+  apiKeyRequired: boolean
+}
+
+export const chatProviders = [
+  {
+    id: 'deepseek',
+    label: 'Deepseek',
+    endpoint: 'https://api.deepseek.com/chat/completions',
+    apiKeyRequired: true,
+    models: [
+      { value: 'deepseek-v4-flash', label: 'Deepseek V4 Flash' },
+      { value: 'deepseek-v4-pro', label: 'Deepseek V4 Pro' },
+    ],
+  },
+] as const satisfies readonly ChatProviderDefinition[]
+
+const chatModelConfigs = new Map<string, ChatModelConfig>()
+
+for (const provider of chatProviders) {
+  for (const model of provider.models) {
+    chatModelConfigs.set(model.value, {
+      ...model,
+      providerId: provider.id,
+      providerLabel: provider.label,
+      endpoint: provider.endpoint,
+      apiKeyRequired: provider.apiKeyRequired,
+    })
+  }
+}
+
+export const chatCompletionModels = new Set(chatModelConfigs.keys())
+export const deepseekModels = chatCompletionModels
+
+export function getChatModelConfig(model: string) {
+  return chatModelConfigs.get(model)
+}
 
 export function createAssistantPlaceholder(thinkingMode: string): ChatMessage {
   const isThinking = thinkingMode !== 'off'
@@ -112,7 +164,7 @@ export function finishStreamingMessage(messages: ChatMessage[]) {
   return next
 }
 
-export async function streamDeepSeekChat({
+export async function streamChatCompletions({
   apiKey,
   model,
   thinkingMode,
@@ -127,13 +179,19 @@ export async function streamDeepSeekChat({
   signal: AbortSignal
   onDelta: (delta: StreamDelta) => void
 }) {
-  const response = await fetch('https://api.deepseek.com/chat/completions', {
+const config = getChatModelConfig(model)
+  if (!config) throw new Error(`Unknown chat model: ${model}`)
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  const trimmedApiKey = apiKey.trim()
+  if (trimmedApiKey) headers.Authorization = `Bearer ${trimmedApiKey}`
+
+  const response = await fetch(config.endpoint, {
     method: 'POST',
     signal,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({
       model,
       messages,
@@ -143,15 +201,15 @@ export async function streamDeepSeekChat({
   })
 
   if (!response.ok) {
-    const data = (await response.json()) as DeepSeekErrorResponse
+    const data = (await response.json()) as ChatCompletionsErrorResponse
     throw new Error(data.error?.message ?? response.statusText)
   }
 
   if (!response.body) {
-    throw new Error('DeepSeek returned no response stream.')
+    throw new Error(`${config.providerLabel} returned no response stream.`)
   }
 
-  await readDeepSeekStream(response.body, onDelta)
+  await readChatCompletionsStream(response.body, onDelta)
 }
 
 function getThinkingOptions(mode: string) {
@@ -171,7 +229,7 @@ function getThinkingOptions(mode: string) {
   }
 }
 
-async function readDeepSeekStream(
+async function readChatCompletionsStream(
   body: ReadableStream<Uint8Array>,
   onDelta: (delta: StreamDelta) => void
 ) {
@@ -194,7 +252,7 @@ async function readDeepSeekStream(
       const payload = trimmed.slice(5).trim()
       if (payload === '[DONE]') return
 
-      const chunk = JSON.parse(payload) as DeepSeekStreamChunk
+      const chunk = JSON.parse(payload) as ChatCompletionsStreamChunk
       const delta = chunk.choices?.[0]?.delta
 
       if (delta?.reasoning_content !== undefined) {

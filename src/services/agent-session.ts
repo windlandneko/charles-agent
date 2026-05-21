@@ -1,10 +1,11 @@
 import {
   type ChatMessage,
   type StreamDelta,
+  chatCompletionModels,
   createAssistantPlaceholder,
-  deepseekModels,
   finishStreamingMessage,
-  streamDeepSeekChat,
+  getChatModelConfig,
+  streamChatCompletions,
   toApiMessages,
   updateStreamingMessage,
 } from '@/lib/deepseek'
@@ -30,8 +31,6 @@ export type AgentSessionSnapshot = {
   messages: ChatMessage[]
 }
 
-const providerId = 'deepseek'
-
 export const emptySnapshot: AgentSessionSnapshot = {
   draft: '',
   error: null,
@@ -56,9 +55,13 @@ export function getOptionsOrError({
   thinkingMode,
 }: StreamOptions) {
   const trimmedApiKey = apiKey.trim()
-  if (!trimmedApiKey) return 'Please enter a DeepSeek API key first.'
-  if (!deepseekModels.has(model)) {
-    return 'Only DeepSeek models are connected right now.'
+  const config = getChatModelConfig(model)
+
+  if (!config || !chatCompletionModels.has(model)) {
+    return 'Only configured chat completion models are connected right now.'
+  }
+  if (config.apiKeyRequired && !trimmedApiKey) {
+    return `Please enter a ${config.providerLabel} API key first.`
   }
 
   return {
@@ -260,7 +263,7 @@ export class AgentSession {
     })
 
     try {
-      await streamDeepSeekChat({
+      await streamChatCompletions({
         ...options,
         messages: toApiMessages(previous),
         signal: abortController.signal,
@@ -281,7 +284,7 @@ export class AgentSession {
         this.patch({
           error: getError(
             cause,
-            'Unable to contact DeepSeek. Please try again.'
+            `Unable to contact ${getProviderLabel(options.model)}. Please try again.`
           ),
         })
       }
@@ -351,7 +354,7 @@ export class AgentSession {
       role: 'assistant',
       content: '',
       reasoningContent: '',
-      providerId,
+      providerId: getProviderId(options.model),
       modelId: options.model,
       status: 'streaming',
     })
@@ -370,7 +373,7 @@ export class AgentSession {
       threadId: this.threadId,
       role: 'user',
       content,
-      providerId,
+      providerId: getProviderId(options.model),
       modelId: options.model,
       status: 'done',
     })
@@ -381,9 +384,17 @@ export class AgentSession {
     return storage.chats.updateMessage(messageId, {
       content: '',
       reasoningContent: '',
-      providerId,
+      providerId: getProviderId(options.model),
       modelId: options.model,
       status: 'streaming',
     })
   }
+}
+
+function getProviderId(model: string) {
+  return getChatModelConfig(model)?.providerId ?? 'unknown'
+}
+
+function getProviderLabel(model: string) {
+  return getChatModelConfig(model)?.providerLabel ?? 'the provider'
 }
