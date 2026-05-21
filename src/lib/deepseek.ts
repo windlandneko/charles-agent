@@ -164,7 +164,7 @@ function getThinkingOptions(mode: string) {
   }
 
   return {
-    reasoning_effort: mode === 'xhigh' ? 'max' : 'high',
+    reasoning_effort: mode,
     thinking: {
       type: 'enabled',
     },

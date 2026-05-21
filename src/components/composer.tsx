@@ -1,10 +1,16 @@
-import { ArrowUp, Plus, Square } from 'lucide-react'
-import { type KeyboardEvent, memo, type SyntheticEvent } from 'react'
+import { ArrowUp, Plus, StopCircle } from 'lucide-react'
+import {
+  type KeyboardEvent,
+  type SyntheticEvent,
+  memo,
+  useCallback,
+} from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import type { AgentHook } from '@/hooks/use-agent'
 
 import {
   Select,
@@ -19,19 +25,8 @@ import {
 
 type ComposerProps = {
   className?: string
-  value: string
-  apiKey: string
-  model: string
-  thinkingMode: string
+  agent: AgentHook
   placeholder?: string
-  onChange: (value: string) => void
-  onApiKeyChange: (value: string) => void
-  onModelChange: (value: string) => void
-  onThinkingModeChange: (value: string) => void
-  onSubmit: () => void
-  onStop?: () => void
-  disabled?: boolean
-  isSending?: boolean
 }
 
 const providers = [
@@ -42,77 +37,48 @@ const providers = [
       { value: 'deepseek-v4-pro', label: 'Deepseek V4 Pro' },
     ],
   },
-  {
-    label: 'OpenAI',
-    models: [
-      { value: 'gpt-5.5', label: 'GPT 5.5' },
-      { value: 'gpt-5.4', label: 'GPT 5.4' },
-      { value: 'gpt-5.4-mini', label: 'GPT 5.4 Mini' },
-      { value: 'gpt-5.3-codex', label: 'GPT 5.3 Codex' },
-      { value: 'gpt-5.3-codex-spark', label: 'GPT 5.3 Codex Spark' },
-      { value: 'gpt-5.2', label: 'GPT 5.2' },
-    ],
-  },
-  {
-    label: 'Anthropic',
-    models: [
-      { value: 'claude-4.7-opus', label: 'Opus 4.7' },
-      { value: 'claude-4.6-sonnet', label: 'Sonnet 4.6' },
-      { value: 'claude-4.5-haiku', label: 'Haiku 4.5' },
-    ],
-  },
 ] as const
 
-const thinkingModes = ['low', 'medium', 'high', 'xhigh'] as const
+const thinkingModes = ['max'] as const
 
 export const Composer = memo(function Composer({
   className,
-  value,
-  apiKey,
-  model,
-  thinkingMode,
+  agent,
   placeholder,
-  onChange,
-  onApiKeyChange,
-  onModelChange,
-  onThinkingModeChange,
-  onSubmit,
-  onStop,
-  disabled = false,
-  isSending = false,
 }: ComposerProps) {
-  const controlsDisabled = disabled || isSending
-  const canSubmit = value.trim().length > 0 && !disabled && !isSending
+  const controlsDisabled = agent.isLoadingThread || agent.isSending
+  const canSubmit =
+    agent.draft.trim().length > 0 && !agent.isLoadingThread && !agent.isSending
 
-  const formSubmit = (event: SyntheticEvent) => {
-    event.preventDefault()
-    if (isSending) {
-      onStop?.()
+  const handleSend = useCallback(() => {
+    if (agent.isSending) {
+      agent.stopGeneration?.()
       return
     }
-    if (canSubmit) onSubmit()
-  }
-  const keySubmit = (event: KeyboardEvent) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault()
-      if (isSending) {
-        onStop?.()
-        return
-      }
-      if (canSubmit) onSubmit()
-    }
-  }
+    if (canSubmit) agent.send()
+  }, [agent.isSending, canSubmit, agent.send, agent.stopGeneration])
 
   return (
-    <form className={cn('relative w-full', className)} onSubmit={formSubmit}>
+    <form
+      className={cn('relative w-full', className)}
+      onSubmit={(event: SyntheticEvent) => {
+        event.preventDefault()
+        handleSend()
+      }}
+    >
       <Textarea
         aria-label="Message"
-        className="min-h-24 rounded-2xl bg-card px-5 pt-4.5 pb-16 text-base! shadow-[0_0.25rem_1.25rem_hsl(0_0%_0%/3.5%),0_0_0_0.5px_hsla(0_0%_0%/0.15)] focus-within:shadow-[0_0.25rem_1.25rem_hsl(0_0%_0%/7.5%),0_0_0_0.5px_hsla(0_0%_0%/0.3)] hover:shadow-[0_0.25rem_1.25rem_hsl(0_0%_0%/3.5%),0_0_0_0.5px_hsla(0_0%_0%/0.3)] hover:focus-within:shadow-[0_0.25rem_1.25rem_hsl(0_0%_0%/7.5%),0_0_0_0.5px_hsla(0_0%_0%/0.3)] focus-visible:ring-0"
+        className="shadow-composer min-h-24 rounded-2xl bg-card px-5 pt-4.5 pb-16 text-base! focus-visible:ring-0"
         disabled={controlsDisabled}
-        onChange={({ target }) => onChange(target.value)}
-        onKeyDown={keySubmit}
+        onChange={({ target }) => agent.updateDraft(target.value)}
+        onKeyDown={(event: KeyboardEvent) => {
+          if (event.key !== 'Enter') return
+          if (event.shiftKey || event.metaKey) return
+          event.preventDefault()
+          handleSend()
+        }}
         placeholder={placeholder}
-        value={value}
+        value={agent.draft}
       />
 
       <div className="pointer-events-none absolute right-3 bottom-3 left-3 flex items-end justify-between">
@@ -127,8 +93,8 @@ export const Composer = memo(function Composer({
             <Plus />
           </Button>
           <Select
-            value={model}
-            onValueChange={onModelChange}
+            value={agent.model}
+            onValueChange={agent.updateModel}
             disabled={controlsDisabled}
           >
             <SelectTrigger>
@@ -148,8 +114,8 @@ export const Composer = memo(function Composer({
             </SelectContent>
           </Select>
           <Select
-            value={thinkingMode}
-            onValueChange={onThinkingModeChange}
+            value={agent.thinkingMode}
+            onValueChange={agent.updateThinkingMode}
             disabled={controlsDisabled}
           >
             <SelectTrigger>
@@ -171,24 +137,24 @@ export const Composer = memo(function Composer({
             </SelectContent>
           </Select>
           <Input
-            aria-label="DeepSeek API key"
+            aria-label="API key"
             className="h-7 w-16 bg-input/20 px-2 py-1 text-xs md:w-24"
             disabled={controlsDisabled}
-            onChange={({ target }) => onApiKeyChange(target.value)}
+            onChange={({ target }) => agent.updateApiKey(target.value)}
             placeholder="API key"
             type="password"
-            value={apiKey}
+            value={agent.apiKey}
           />
         </div>
 
         <Button
           type="submit"
           size="icon-lg"
-          aria-label={isSending ? 'Stop generation' : 'Send message'}
+          aria-label={agent.isSending ? 'Stop' : 'Send message'}
           className="pointer-events-auto"
-          disabled={!canSubmit && !isSending}
+          disabled={!canSubmit && !agent.isSending}
         >
-          {isSending ? <Square /> : <ArrowUp />}
+          {agent.isSending ? <StopCircle /> : <ArrowUp />}
         </Button>
       </div>
     </form>

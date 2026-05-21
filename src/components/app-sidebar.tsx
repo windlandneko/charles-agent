@@ -1,5 +1,3 @@
-'use client'
-
 import {
   ArchiveIcon,
   BoxIcon,
@@ -7,6 +5,7 @@ import {
   MoreVertical,
   PencilIcon,
   PinIcon,
+  PinOffIcon,
   PlusIcon,
   SearchIcon,
   TrashIcon,
@@ -81,20 +80,15 @@ const fadeLabelClass =
   'opacity-100 transition-opacity duration-200 ease-out group-data-[collapsible=icon]:opacity-0'
 
 export function AppSidebar({
-  chatThreads,
+  controller,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
-  chatThreads: ChatThreadsController
+  controller: ChatThreadsController
 }) {
   const { isMobile, setOpenMobile } = useSidebar()
   const [isContentScrolled, setIsContentScrolled] = React.useState(false)
-  const {
-    archivedThreads,
-    isLoadingThreads,
-    pinnedThreads,
-    recentThreads,
-    startNewChat,
-  } = chatThreads
+  const { archivedThreads, isLoadingThreads, visibleThreads, startNewChat } =
+    controller
 
   const handleContentScroll = React.useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
@@ -208,24 +202,16 @@ export function AppSidebar({
             className={`group-data-[collapsible=icon]:pointer-events-none ${fadeLabelClass}`}
           >
             <ThreadGroup
-              chatThreads={chatThreads}
-              emptyLabel={isLoadingThreads ? 'Loading...' : 'No pinned chats'}
-              isMobile={isMobile}
-              label="Pinned"
-              setOpenMobile={setOpenMobile}
-              threads={pinnedThreads}
-            />
-            <ThreadGroup
-              chatThreads={chatThreads}
+              controller={controller}
               emptyLabel={isLoadingThreads ? 'Loading...' : 'No recent chats'}
               isMobile={isMobile}
               label="Recents"
               setOpenMobile={setOpenMobile}
-              threads={recentThreads}
+              threads={visibleThreads}
             />
             {archivedThreads.length > 0 ? (
               <ThreadGroup
-                chatThreads={chatThreads}
+                controller={controller}
                 emptyLabel=""
                 isMobile={isMobile}
                 label="Archived"
@@ -247,14 +233,14 @@ export function AppSidebar({
 }
 
 function ThreadGroup({
-  chatThreads,
+  controller,
   emptyLabel,
   isMobile,
   label,
   setOpenMobile,
   threads,
 }: {
-  chatThreads: ChatThreadsController
+  controller: ChatThreadsController
   emptyLabel: string
   isMobile: boolean
   label: string
@@ -268,7 +254,7 @@ function ThreadGroup({
         {threads.length > 0 ? (
           threads.map(thread => (
             <ThreadItem
-              chatThreads={chatThreads}
+              controller={controller}
               isMobile={isMobile}
               key={thread.id}
               setOpenMobile={setOpenMobile}
@@ -288,40 +274,101 @@ function ThreadGroup({
 }
 
 function ThreadItem({
-  chatThreads,
+  controller,
   isMobile,
   setOpenMobile,
   thread,
 }: {
-  chatThreads: ChatThreadsController
+  controller: ChatThreadsController
   isMobile: boolean
   setOpenMobile: (open: boolean) => void
   thread: ChatThread
 }) {
   const selectThread = React.useCallback(() => {
-    chatThreads.selectThread(thread.id)
+    controller.activateThread(thread.id)
     if (isMobile) setOpenMobile(false)
-  }, [chatThreads, isMobile, setOpenMobile, thread.id])
+  }, [controller, isMobile, setOpenMobile, thread.id])
 
   const renameThread = React.useCallback(async () => {
     const title = window.prompt('Rename chat', thread.title)?.trim()
     if (!title || title === thread.title) return
 
-    await chatThreads.renameThread(thread, title)
-  }, [chatThreads, thread])
+    await controller.updateThread(thread, { title })
+  }, [controller, thread])
 
   const deleteThread = React.useCallback(async () => {
     const confirmed = window.confirm(`Delete "${thread.title}"?`)
     if (!confirmed) return
 
-    await chatThreads.deleteThread(thread)
-  }, [chatThreads, thread])
+    await controller.deleteThread(thread)
+  }, [controller, thread])
+
+  const menuTrigger = thread.pinned ? (
+    <SidebarMenuAction
+      aria-label="Unpin"
+      className="group/unpin-action"
+      title="Unpin"
+      onClick={() =>
+        controller.updateThread(thread, { pinned: !thread.pinned })
+      }
+    >
+      <span className="relative size-4">
+        <PinIcon className="absolute inset-0 size-4 opacity-100 transition-opacity group-hover/unpin-action:opacity-0 group-focus-visible/unpin-action:opacity-0" />
+        <PinOffIcon className="absolute inset-0 size-4 opacity-0 transition-opacity group-hover/unpin-action:opacity-100 group-focus-visible/unpin-action:opacity-100" />
+      </span>
+      <span className="sr-only">Unpin</span>
+    </SidebarMenuAction>
+  ) : (
+    <>
+      <DropdownMenuTrigger asChild>
+        <SidebarMenuAction showOnHover>
+          <MoreVertical />
+          <span className="sr-only">Open menu</span>
+        </SidebarMenuAction>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        side={isMobile ? 'bottom' : 'right'}
+        align={isMobile ? 'end' : 'start'}
+        className="min-w-44 rounded-lg"
+      >
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            onSelect={() =>
+              controller.updateThread(thread, { pinned: !thread.pinned })
+            }
+          >
+            <PinIcon />
+            Pin
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={renameThread}>
+            <PencilIcon />
+            Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() =>
+              controller.updateThread(thread, { archived: !thread.archived })
+            }
+          >
+            <ArchiveIcon />
+            {thread.archived ? 'Unarchive' : 'Archive'}
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem variant="destructive" onSelect={deleteThread}>
+            <TrashIcon />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </>
+  )
 
   return (
     <DropdownMenu>
       <SidebarMenuItem>
         <SidebarMenuButton
-          isActive={thread.id === chatThreads.activeThreadId}
+          isActive={thread.id === controller.activeThreadId}
           title={thread.title}
           tooltip={thread.title}
           type="button"
@@ -329,41 +376,7 @@ function ThreadItem({
         >
           <span>{thread.title}</span>
         </SidebarMenuButton>
-        <DropdownMenuTrigger asChild>
-          <SidebarMenuAction showOnHover>
-            <MoreVertical />
-            <span className="sr-only">Open chat menu</span>
-          </SidebarMenuAction>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          side={isMobile ? 'bottom' : 'right'}
-          align={isMobile ? 'end' : 'start'}
-          className="min-w-44 rounded-lg"
-        >
-          <DropdownMenuGroup>
-            <DropdownMenuItem onSelect={() => chatThreads.togglePin(thread)}>
-              <PinIcon />
-              {thread.pinned ? 'Unpin' : 'Pin'}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={renameThread}>
-              <PencilIcon />
-              Rename
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => chatThreads.toggleArchive(thread)}
-            >
-              <ArchiveIcon />
-              {thread.archived ? 'Unarchive' : 'Archive'}
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem variant="destructive" onSelect={deleteThread}>
-              <TrashIcon />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
+        {menuTrigger}
       </SidebarMenuItem>
     </DropdownMenu>
   )

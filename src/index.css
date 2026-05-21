@@ -122,6 +122,29 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@layer components {
+  .shadow-composer {
+    box-shadow:
+      0 0.25rem 1.25rem hsl(0 0% 0% / 3.5%),
+      0 0 0 0.5px hsla(0 0% 0% / 0.15);
+    &:focus-within {
+      box-shadow:
+        0 0.25rem 1.25rem hsl(0 0% 0% / 7.5%),
+        0 0 0 0.5px hsla(0 0% 0% / 0.3);
+    }
+    &:hover {
+      box-shadow:
+        0 0.25rem 1.25rem hsl(0 0% 0% / 3.5%),
+        0 0 0 0.5px hsla(0 0% 0% / 0.3);
+      &:focus-within {
+        box-shadow:
+          0 0.25rem 1.25rem hsl(0 0% 0% / 7.5%),
+          0 0 0 0.5px hsla(0 0% 0% / 0.3);
+      }
+    }
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -1,33 +1,23 @@
-import { useEffect, useMemo, useRef } from 'react'
-
 import { Composer } from '@/components/composer'
 import { MessageItem } from '@/components/message-item'
 import { ConversationSkeleton } from '@/components/skeleton'
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
-import { useAgentWorker } from '@/hooks/use-agent-worker'
+import { useAgent } from '@/hooks/use-agent'
 import { cn } from '@/lib/utils'
 import type { ChatThreadsController } from '@/hooks/use-chat-threads'
-import type { ChatMessage } from '@/lib/deepseek'
 
 type AppMainProps = {
-  chatThreads: ChatThreadsController
+  controller: ChatThreadsController
 }
 
-const messageStaggerStepMs = 50
-const messageStaggerMaxMs = 500
-
-export function AppMain({ chatThreads }: AppMainProps) {
-  const chat = useAgentWorker({
-    chatThreads,
-  })
-  const messages = chat.messages
-  const messageEnterDelays = useMessageEnterDelays(messages)
+export function AppMain({ controller }: AppMainProps) {
+  const agent = useAgent({ controller })
+  const messages = agent.messages
   const isLoading =
-    Boolean(chatThreads.activeThreadId) &&
-    chat.isLoadingThread &&
+    Boolean(controller.activeThreadId) &&
+    agent.isLoadingThread &&
     messages.length === 0
   const showConversation = messages.length > 0 || isLoading
-  const showWelcome = !showConversation
 
   return (
     <SidebarInset>
@@ -37,7 +27,7 @@ export function AppMain({ chatThreads }: AppMainProps) {
 
       <div
         className={cn(
-          'h-svh w-full overflow-y-auto pt-16 pb-64',
+          'h-svh w-full scrollbar-gutter-stable overflow-y-auto pt-16 pb-64',
           !showConversation && 'hidden'
         )}
       >
@@ -47,16 +37,11 @@ export function AppMain({ chatThreads }: AppMainProps) {
           ) : (
             messages.map((message, index) => (
               <MessageItem
-                key={message.id ?? index}
-                enterDelayMs={
-                  messageEnterDelays.get(getMessageRenderId(message, index)) ??
-                  0
-                }
+                key={message.id}
                 index={index}
                 message={message}
-                onCopy={chat.copyMessage}
-                onReasoningOpenChange={chat.changeReasoningOpen}
-                onRetry={chat.retryMessage}
+                onReasoningOpenChange={agent.changeReasoningOpen}
+                onRetry={agent.retryMessage}
               />
             ))
           )}
@@ -71,33 +56,22 @@ export function AppMain({ chatThreads }: AppMainProps) {
             : 'top-1/4 max-w-2xl px-4'
         )}
       >
-        {showWelcome && (
+        {!showConversation && (
           <h1 className="pb-12 text-center font-heading text-[clamp(1.875rem,1.2rem+2vw,2.5rem)] select-none">
             Good evening, Charlie
           </h1>
         )}
         <Composer
-          apiKey={chat.apiKey}
-          disabled={chat.isLoadingThread}
-          isSending={chat.isSending}
-          model={chat.model}
+          agent={agent}
           placeholder={
             showConversation
               ? 'Write a message...'
               : 'How can I help you today?'
           }
-          thinkingMode={chat.thinkingMode}
-          value={chat.draft}
-          onApiKeyChange={chat.updateApiKey}
-          onChange={chat.updateDraft}
-          onModelChange={chat.updateModel}
-          onSubmit={chat.send}
-          onStop={chat.stopGeneration}
-          onThinkingModeChange={chat.updateThinkingMode}
         />
-        {chat.error && (
+        {agent.error && (
           <p className="mt-2 px-2 text-sm text-destructive" role="alert">
-            {chat.error}
+            {agent.error}
           </p>
         )}
       </div>
@@ -114,36 +88,4 @@ export function AppMain({ chatThreads }: AppMainProps) {
       </p>
     </SidebarInset>
   )
-}
-
-function useMessageEnterDelays(messages: ChatMessage[]) {
-  const previousIdsRef = useRef<Set<string>>(new Set())
-  const currentIds = useMemo(
-    () => messages.map((message, index) => getMessageRenderId(message, index)),
-    [messages]
-  )
-
-  const delays = useMemo(() => {
-    const previousIds = previousIdsRef.current
-    const addedIds = currentIds.filter(id => !previousIds.has(id))
-
-    if (addedIds.length <= 1) return new Map<string, number>()
-
-    return new Map(
-      addedIds.map((id, index) => [
-        id,
-        Math.min(index * messageStaggerStepMs, messageStaggerMaxMs),
-      ])
-    )
-  }, [currentIds])
-
-  useEffect(() => {
-    previousIdsRef.current = new Set(currentIds)
-  }, [currentIds])
-
-  return delays
-}
-
-function getMessageRenderId(message: ChatMessage, index: number) {
-  return message.id ?? `${message.role}:${message.createdAt ?? index}:${index}`
 }

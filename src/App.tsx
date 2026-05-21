@@ -6,14 +6,14 @@ import { TooltipProvider } from '@/components/ui/tooltip.tsx'
 import { useChatThreads } from '@/hooks/use-chat-threads.ts'
 
 export function App() {
-  const chatThreads = useChatThreads()
+  const controller = useChatThreads()
 
   return (
     <ThemeProvider>
       <TooltipProvider>
         <SidebarProvider>
-          <AppSidebar chatThreads={chatThreads} />
-          <AppMain chatThreads={chatThreads} />
+          <AppSidebar controller={controller} />
+          <AppMain controller={controller} />
         </SidebarProvider>
       </TooltipProvider>
     </ThemeProvider>
