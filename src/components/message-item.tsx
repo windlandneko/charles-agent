@@ -26,11 +26,7 @@ export const MessageItem = memo(function MessageItem({
 }: MessageItemProps) {
   if (message.role === 'assistant') {
     return (
-      <AssistantMessage
-        index={index}
-        message={message}
-        onRetry={onRetry}
-      />
+      <AssistantMessage index={index} message={message} onRetry={onRetry} />
     )
   }
 
@@ -58,10 +54,7 @@ function AssistantMessage({
   return (
     <article className="group mt-6 mb-1 flex flex-col">
       {hasReasoning && (
-        <Collapsible
-          open={reasoningOpen}
-          onOpenChange={setReasoningOpen}
-        >
+        <Collapsible open={reasoningOpen} onOpenChange={setReasoningOpen}>
           <CollapsibleTrigger asChild>
             <button
               className="mb-4 flex max-w-full items-center gap-1 text-left text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -87,7 +80,7 @@ function AssistantMessage({
       )}
       <MessageMarkdown
         className="mb-1 ml-1 font-heading text-pretty"
-        content={message.content || (message.isThinking ? '' : '...')}
+        content={message.content || (message.isThinking ? '' : '(no content)')}
         streaming={message.isThinking}
       />
       <MessageActions
@@ -101,10 +94,9 @@ function AssistantMessage({
 function UserMessage({ message }: { message: ChatMessage }) {
   return (
     <article className="group mt-6 mb-1 flex flex-col items-end">
-      <MessageMarkdown
-        className="mr-1 mb-1 max-w-[85%] rounded-xl bg-accent px-4 py-2.5"
-        content={message.content}
-      />
+      <p className="mr-1 mb-1 max-w-[85%] rounded-xl bg-accent px-4 py-2.5">
+        {message.content}
+      </p>
       <MessageActions content={message.content} />
     </article>
   )

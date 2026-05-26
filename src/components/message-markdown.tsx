@@ -54,6 +54,7 @@ export function MessageMarkdown({
 
   return (
     <Streamdown
+      skipHtml
       className={className}
       controls={true}
       isAnimating={streaming}
